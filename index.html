@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Donut Tycoon</title>
+    <style>
+        :root{--glow-yellow:#ffeb3b;--accent-pink:#e91e63;--bg-dark:#0f1a3a;--surface:#16213e;--text-dim:#9aa0a6;--blob-pink:#e91e63;--blob-chocolate:#3E2723;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html{background:#1a1a2e;overscroll-behavior:none;}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,#1e0533,#0f1a3a);color:#ffe;margin:0;padding:20px;min-height:100vh;text-align:center;-webkit-font-smoothing:antialiased;touch-action:pan-y;overscroll-behavior-x:none;overflow-x:hidden;}
+        h1{margin:0.4em 0 0.2em;color:#ffeb3b;text-shadow:0 0 16px #ff9800;}
+        #score{font-size:3.8rem;font-weight:bold;margin:0.1em 0 0.3em;min-height:1.1em;}
+        #dps{font-size:1.3rem;color:#a5d6a7;margin-bottom:1.5rem;}
+        #big-donut{position:relative;width:260px;height:260px;margin:1.5rem auto;font-size:9rem;line-height:260px;background:radial-gradient(circle at 35% 35%,#fff,#ffca28 20%,#f57f17 60%,#ef6c00);border-radius:50%;border:10px solid #ffe082;box-shadow:0 10px 30px #0008,inset 0 8px 20px #fff4;cursor:pointer;user-select:none;transition:transform 0.08s;}
+        #big-donut:active{transform:scale(0.92);}#big-donut.clicked{transform:scale(0.9);}
+        .brag-btn-wrapper{margin:8px auto 0;max-width:260px;}
+        .brag-btn{width:100%;padding:12px;font-size:1rem;font-weight:bold;color:#fff;background:linear-gradient(135deg,#ff6d00,#ff9100);border:none;border-radius:10px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;letter-spacing:0.4px;}
+        .brag-btn:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(255,109,0,0.4);}.brag-btn:active{transform:scale(0.97);}
+        #buildings{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;max-width:1100px;margin:2rem auto;}
+        .building{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:1.2rem;transition:all 0.18s;}
+        @supports(backdrop-filter:blur(6px)){.building{background:rgba(255,255,255,0.08);backdrop-filter:blur(6px);}}
+        .building:hover{transform:translateY(-4px);background:rgba(255,255,255,0.14);}
+        .name{font-size:1.4rem;font-weight:600;margin-bottom:0.3em;}.owned{color:#81c784;font-size:1.1rem;}.produces{font-size:0.95rem;opacity:0.9;margin:0.4em 0;}
+        button{width:100%;padding:0.9em;margin-top:0.8em;font-size:1.1rem;font-weight:bold;color:white;background:linear-gradient(#e91e63,#c2185b);border:none;border-radius:8px;cursor:pointer;transition:all 0.15s;}
+        button:hover:not(:disabled){background:linear-gradient(#f50057,#d81b60);transform:scale(1.03);}
+        button:disabled{background:#444;opacity:0.5;cursor:not-allowed;}button:focus-visible{outline:3px solid #ffb74d;outline-offset:2px;}
+        #reset{padding:12px 24px;font-size:1rem;border-radius:999px;border:none;cursor:pointer;color:white;margin:10px 5px;background:#f44336;}
+        .float{position:absolute;font-weight:bold;font-size:2rem;color:#fff176;pointer-events:none;animation:float-up 1.2s forwards;}
+        @keyframes float-up{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-80px) scale(1.4);}}
+        .email-controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px 0;}
+        #emailInput{padding:10px 15px;font-size:1rem;border:2px solid #ffd700;border-radius:8px;background:#1a1a2e;color:#ffe;min-width:250px;}#emailInput::placeholder{color:#aaa;}
+        #saveEmail,#loadEmail{padding:10px 20px;font-size:1rem;border:none;border-radius:8px;cursor:pointer;color:white;font-weight:bold;transition:0.2s;}
+        #saveEmail{background:#4caf50;}#loadEmail{background:#2196f3;}#saveEmail:hover,#loadEmail:hover{transform:scale(1.05);filter:brightness(1.1);}
+        .available-progresses-wrapper{max-width:480px;margin:0 auto 12px;text-align:left;}
+        .available-progresses-toggle{width:100%;padding:10px 16px;font-size:0.9rem;font-weight:600;color:#ffe;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;text-align:left;transition:background 0.15s;display:flex;justify-content:space-between;align-items:center;}
+        .available-progresses-toggle:hover{background:rgba(255,255,255,0.1);}.available-progresses-toggle .arrow{font-size:0.8rem;transition:transform 0.2s;}.available-progresses-toggle.open .arrow{transform:rotate(180deg);}
+        .available-progresses-list{display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;}.available-progresses-list.show{display:block;}
+        .available-progresses-list .progress-item{padding:10px 16px;cursor:pointer;font-size:0.9rem;color:#d0d3d8;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;}
+        .available-progresses-list .progress-item:last-child{border-bottom:none;}.available-progresses-list .progress-item:hover{background:rgba(255,255,255,0.08);color:#fff;}
+        .available-progresses-list .progress-time{font-size:0.75rem;color:var(--text-dim);}.available-progresses-empty{padding:14px 16px;font-size:0.85rem;color:var(--text-dim);text-align:center;}
+        .story-btn-wrapper{margin:20px auto 10px;max-width:400px;}
+        .story-btn{width:100%;padding:14px;font-size:1rem;font-weight:600;color:#ffe;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.25);border-radius:10px;cursor:pointer;transition:all 0.15s;letter-spacing:0.3px;}
+        .story-btn:hover{background:rgba(0,229,255,0.12);border-color:rgba(0,229,255,0.45);}.story-btn:active{background:rgba(0,229,255,0.1);}
+        .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:#2e7d32;color:#fff;padding:12px 24px;border-radius:24px;font-size:0.95rem;font-weight:600;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s ease,transform 0.25s ease;box-shadow:0 6px 24px rgba(0,0,0,0.5);letter-spacing:0.2px;max-width:90vw;text-align:center;}
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}.toast.error{background:#c62828;}
+        .confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s ease;}
+        .confirm-overlay.show{opacity:1;pointer-events:auto;}.confirm-dialog{background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px 20px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+        .confirm-dialog p{font-size:0.95rem;color:#ffe;margin-bottom:20px;line-height:1.5;}.confirm-dialog .confirm-buttons{display:flex;gap:12px;}
+        .confirm-dialog .confirm-buttons button{flex:1;padding:12px;font-size:0.95rem;font-weight:600;border:none;border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:inherit;}
+        .confirm-dialog .confirm-yes{background:#e91e63;color:#fff;}.confirm-dialog .confirm-yes:hover{background:#f50057;}.confirm-dialog .confirm-no{background:rgba(255,255,255,0.1);color:#ffe;}.confirm-dialog .confirm-no:hover{background:rgba(255,255,255,0.18);}
+        .info-blob{position:fixed;width:52px;height:52px;border-radius:50%;background:var(--blob-pink);color:#fff;z-index:250;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:bold;cursor:grab;box-shadow:0 4px 16px rgba(233,30,99,0.5),0 0 30px rgba(233,30,99,0.2);user-select:none;-webkit-user-select:none;transition:transform 0.15s ease,box-shadow 0.15s ease;touch-action:none;}
+        .info-blob:active{cursor:grabbing;transform:scale(1.08);box-shadow:0 6px 24px rgba(233,30,99,0.7);}
+        .info-blob-panel{position:fixed;z-index:260;opacity:0;pointer-events:none;transition:opacity 0.25s ease,transform 0.25s ease;transform:scale(0.9);}.info-blob-panel.open{opacity:1;pointer-events:auto;transform:scale(1);}
+        .info-panel-inner{background:var(--blob-pink);border-radius:16px;padding:20px 16px 16px;width:320px;max-height:450px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 20px 60px rgba(0,0,0,0.6);position:relative;color:var(--blob-chocolate);font-size:0.85rem;line-height:1.6;}
+        .info-panel-inner h3{text-align:center;font-size:1rem;margin-bottom:14px;color:var(--blob-chocolate);font-weight:700;letter-spacing:0.3px;}
+        .info-panel-inner .section{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(62,39,35,0.2);}.info-panel-inner .section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+        .info-panel-inner .section-title{font-weight:700;font-size:0.8rem;letter-spacing:0.5px;margin-bottom:4px;color:var(--blob-chocolate);opacity:0.85;}.info-panel-inner .section p{margin:0;color:var(--blob-chocolate);}
+        .info-panel-close{position:sticky;top:0;float:right;width:28px;height:28px;border-radius:50%;background:rgba(62,39,35,0.2);border:none;color:var(--blob-chocolate);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5;margin-bottom:-20px;}
+        .info-panel-close:active{background:rgba(62,39,35,0.35);}.info-panel-footer{text-align:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(62,39,35,0.2);font-style:italic;font-size:0.8rem;color:var(--blob-chocolate);}
+        
+        .splash-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#1e0533,#0f1a3a);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:1;pointer-events:auto;transition:opacity 0.5s ease;}
+        .splash-overlay.fade-out{opacity:0;pointer-events:none;}
+        .splash-donut{font-size:7rem;animation:splash-bounce 0.6s ease-out forwards,splash-pulse 1.8s ease-in-out 0.6s infinite;}
+        .splash-title{font-size:2rem;font-weight:700;color:#ffeb3b;text-shadow:0 0 20px #ff9800;margin-top:16px;opacity:0;animation:splash-fade-in 0.4s ease forwards 0.3s;}
+        .splash-tagline{font-size:1rem;color:#a5d6a7;margin-top:8px;opacity:0;animation:splash-fade-in 0.4s ease forwards 0.6s;letter-spacing:1px;}
+        .splash-loader{width:120px;height:3px;background:rgba(255,255,255,0.1);border-radius:3px;margin-top:20px;overflow:hidden;opacity:0;animation:splash-fade-in 0.4s ease forwards 0.9s;}
+        .splash-loader-bar{height:100%;background:#ffeb3b;border-radius:3px;animation:splash-load 3.5s ease-in-out forwards;}
+        @keyframes splash-bounce{0%{transform:scale(0.3);opacity:0;}50%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+        @keyframes splash-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+        @keyframes splash-fade-in{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
+        @keyframes splash-load{0%{width:0%;}100%{width:100%;}}
+
+        .brag-page{max-width:500px;margin:0 auto;text-align:center;}.brag-page h1{font-size:1.8rem;color:#ffeb3b;}.brag-page .subtitle{color:#a5d6a7;margin-bottom:24px;}
+        .input-group{margin-bottom:16px;text-align:left;}.input-group label{display:block;font-size:0.9rem;font-weight:600;margin-bottom:4px;color:#ffe;}
+        .input-group input{width:100%;padding:12px 14px;font-size:1rem;border:2px solid #ffd700;border-radius:10px;background:#16213e;color:#ffe;font-family:inherit;transition:border-color 0.2s;}
+        .input-group input:focus{outline:none;border-color:#ff9100;}.input-group input::placeholder{color:#888;}.input-note{font-size:0.75rem;color:var(--text-dim);margin-top:4px;}
+        .avail-emails-wrap{margin-bottom:16px;text-align:left;}.avail-emails-toggle{width:100%;padding:10px 14px;font-size:0.9rem;font-weight:600;color:#ffe;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;text-align:left;transition:background 0.15s;display:flex;justify-content:space-between;align-items:center;}
+        .avail-emails-toggle:hover{background:rgba(255,255,255,0.1);}.avail-emails-toggle .arrow{font-size:0.8rem;transition:transform 0.2s;}.avail-emails-toggle.open .arrow{transform:rotate(180deg);}
+        .avail-emails-list{display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;}.avail-emails-list.show{display:block;}
+        .avail-emails-list .email-item{padding:10px 14px;cursor:pointer;font-size:0.9rem;color:#d0d3d8;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;}
+        .avail-emails-list .email-item:last-child{border-bottom:none;}.avail-emails-list .email-item:hover{background:rgba(255,255,255,0.08);color:#fff;}
+        .avail-emails-list .email-time{font-size:0.75rem;color:var(--text-dim);}.avail-emails-empty{padding:14px;font-size:0.85rem;color:var(--text-dim);text-align:center;}
+        .canvas-wrapper{width:100%;max-width:420px;margin-top:24px;display:none;flex-direction:column;align-items:center;}.canvas-wrapper.show{display:flex;}
+        canvas{width:100%;height:auto;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.5);}
+        .share-btn{width:100%;max-width:380px;padding:14px;font-size:1.1rem;font-weight:bold;color:#fff;background:linear-gradient(135deg,#7c4dff,#651fff);border:none;border-radius:12px;cursor:pointer;margin-top:16px;transition:transform 0.15s,box-shadow 0.15s;letter-spacing:0.3s;}
+        .share-btn:hover{transform:scale(1.02);box-shadow:0 6px 20px rgba(124,77,255,0.4);}.share-btn:active{transform:scale(0.97);}
+        .share-btn:disabled{background:#444;opacity:0.5;cursor:not-allowed;box-shadow:none;}.share-btn.cooldown{background:#555;opacity:0.7;cursor:not-allowed;box-shadow:none;font-size:0.9rem;}
+        .cooldown-note{font-size:0.75rem;color:var(--text-dim);text-align:center;margin-top:6px;display:none;}.cooldown-note.show{display:block;}
+        .cooldown-message{font-size:0.75rem;color:#a5d6a7;margin-top:14px;text-align:center;max-width:380px;line-height:1.5;background:rgba(255,255,255,0.04);border:1px solid rgba(165,214,167,0.25);border-radius:10px;padding:10px 14px;display:none;letter-spacing:0.2px;}
+        .cooldown-message::before{content:"🍩 ";font-size:0.85rem;}
+
+        .comm-page{max-width:680px;margin:0 auto;}.comm-page h1{font-size:2rem;color:#ffeb3b;}.comm-page .subtitle{color:#a5d6a7;margin-bottom:20px;}
+        .stats-bar{text-align:center;margin-bottom:16px;padding:10px 0;display:none;}.stats-bar .counter{display:inline-block;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:8px 18px;font-size:0.9rem;font-weight:600;color:#ffeb3b;letter-spacing:0.3px;}.stats-bar .counter span{color:#fff;}
+        .sort-bar{display:flex;gap:8px;justify-content:center;margin-bottom:18px;display:none;}.sort-pill{padding:7px 16px;border-radius:20px;font-size:0.8rem;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--text-dim);cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap;}
+        .sort-pill:hover{background:rgba(255,255,255,0.1);color:#fff;}.sort-pill.active{background:rgba(0,229,255,0.15);border-color:rgba(0,229,255,0.4);color:#00e5ff;}
+        .loading{text-align:center;color:var(--text-dim);padding:40px 0;font-size:0.95rem;}.empty-state{text-align:center;padding:60px 20px;color:var(--text-dim);display:none;}.empty-state .icon{font-size:4rem;margin-bottom:16px;}
+        .bragger-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;margin-bottom:20px;transition:transform 0.15s,box-shadow 0.15s;}
+        .bragger-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3);}.bragger-card img{width:100%;height:auto;display:block;border-bottom:1px solid rgba(255,255,255,0.08);}
+        .bragger-card .info{padding:14px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:0.9rem;color:#d0d3d8;}
+        .bragger-card .info .name{font-weight:600;color:#fff;font-size:1rem;}.bragger-card .info .rank{color:#ffd700;font-weight:600;}.bragger-card .info .dps{color:#a5d6a7;}.bragger-card .info .donuts-display{color:#ffeb3b;font-weight:600;}.bragger-card .info .time{margin-left:auto;font-size:0.8rem;color:var(--text-dim);}
+        .back-bar{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:20px;text-align:left;display:flex;justify-content:space-between;align-items:center;background:rgba(26,26,46,0.95);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);}
+        .back-link{color:#ffeb3b;text-decoration:none;font-size:0.9rem;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:color 0.15s;cursor:pointer;}.back-link:hover{color:#fff;}
+        .community-top-link{color:#ff9100;text-decoration:none;font-size:0.85rem;font-weight:500;transition:color 0.15s;cursor:pointer;}.community-top-link:hover{color:#fff;}
+        
+        .story-container{max-width:680px;margin:0 auto;padding:32px 20px 80px;text-align:left;}
+        .story-container h1{font-size:2.2rem;margin-bottom:4px;text-align:center;}
+        .story-container .story-subtitle{font-size:0.95rem;color:var(--text-dim);margin-bottom:36px;text-align:center;}
+        .story-container h2{font-size:1.3rem;font-weight:600;color:#ffeb3b;margin:40px 0 12px;}
+        .story-container p{margin-bottom:16px;color:#d0d3d8;font-size:1rem;line-height:1.75;}
+        .story-container strong{color:#fff;font-weight:600;}
+        .story-container em{font-style:italic;color:#c5c8cc;}
+        .story-container ul{margin:12px 0 20px;padding-left:24px;color:#d0d3d8;list-style:none;}
+        .story-container ul li{margin-bottom:10px;padding-left:20px;position:relative;}
+        .story-container ul li::before{content:"•";position:absolute;left:0;color:#ffeb3b;font-weight:bold;}
+        .story-container .highlight-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:18px 20px;margin:20px 0;font-size:0.95rem;color:#c5c8cc;}
+        .story-container .closing{text-align:center;padding:40px 0 20px;color:var(--text-dim);font-style:italic;line-height:1.8;}
+        .story-container hr{border:none;height:1px;background:rgba(255,255,255,0.1);margin:36px 0;}
+        .story-container .inline-code{font-family:"SF Mono","Fira Code",monospace;background:#16213e;color:#fdd663;padding:2px 8px;border-radius:4px;font-size:0.9rem;white-space:nowrap;}
+        .qr-code-img{width:180px;height:180px;border-radius:12px;border:2px solid rgba(255,255,255,0.1);display:block;margin:0 auto;}
+        .footer-links{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-top:16px;border-top:1px solid rgba(255,255,255,0.08);}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+    <div id="pageGame">
+        <div class="splash-overlay" id="splashOverlay">
+            <div class="splash-donut">🍩</div>
+            <div class="splash-title">Donut Tycoon</div>
+            <div class="splash-tagline">own your empire</div>
+            <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+        </div>
+        <h1>🍩 Donut Tycoon</h1>
+        <div id="score">0</div><div id="dps">0 donuts per second</div><div id="big-donut">🍩</div>
+        <div class="brag-btn-wrapper"><button class="brag-btn" id="bragBtn">📜 Brag</button></div>
+        <div id="buildings"></div>
+        <div class="email-controls"><input type="email" id="emailInput" placeholder="your@email.com" /><button id="saveEmail">💾 Save to Email</button><button id="loadEmail">📂 Load from Email</button></div>
+        <div class="available-progresses-wrapper"><button class="available-progresses-toggle" id="progressToggle">Available Progresses <span class="arrow">▼</span></button><div class="available-progresses-list" id="progressList"></div></div>
+        <button id="reset">Reset Game</button>
+        <div class="story-btn-wrapper"><button class="story-btn" id="storyBtn">📖 My Touch</button></div>
+        <div class="toast" id="toast"></div>
+        <div class="confirm-overlay" id="confirmOverlay"><div class="confirm-dialog"><p id="confirmMsg">Are you sure?</p><div class="confirm-buttons"><button class="confirm-no" id="confirmNo">Cancel</button><button class="confirm-yes" id="confirmYes">Confirm</button></div></div></div>
+        <div class="info-blob" id="infoBlob">?</div>
+        <div class="info-blob-panel" id="infoBlobPanel"><div class="info-panel-inner"><button class="info-panel-close" id="infoPanelClose">✕</button><h3>🍩 About This Game</h3><div class="section"><div class="section-title">🍩 What Is This</div><p>Donut Tycoon is an idle clicker game. Click the donut to earn donuts, buy buildings that bake automatically, and watch your empire grow.</p></div><div class="section"><div class="section-title">💾 Saving Your Progress</div><p>Use your email as a key to save and load your game. Nothing gets sent anywhere — everything stays on your device in localStorage. Each email has its own separate save slot.</p></div><div class="section"><div class="section-title">🌍 Braggers Community</div><p>Once you've built something worth flexing, share a bragger to the community gallery. There's a cooldown between shares.</p></div><div class="section"><div class="section-title">⚠️ Heads Up</div><p>This is NOT an idle game with offline accumulation. There is no auto-save. Save manually!</p></div><div class="info-panel-footer">Hopefully y'all learn something ;)<br>🧌</div></div></div>
+    </div>
+
+    <div id="pageBrag" style="display:none;">
+        <div class="back-bar"><a href="#" class="back-link" id="backToGame">← Back to Game</a><a href="#" class="community-top-link" id="toCommunity">🌍 Community</a></div>
+        <div class="brag-page"><h1>🍩 Bragger</h1><p class="subtitle">Flex your Donut Tycoon empire</p>
+            <div class="input-group"><label>Your Name</label><input type="text" id="playerName" placeholder="e.g. Nyota Wa Kweli" maxlength="40" /><span class="input-note">This will appear on your bragger</span></div>
+            <div class="input-group"><label>Your Email</label><input type="email" id="playerEmail" placeholder="your@email.com" /><span class="input-note">Loads your saved game.</span></div>
+            <div class="avail-emails-wrap"><button class="avail-emails-toggle" id="emailsToggle">Available Emails <span class="arrow">▼</span></button><div class="avail-emails-list" id="emailsList"></div></div>
+            <button class="brag-btn" id="bragBtn2">Brag! 📜</button><p class="error-msg" id="errorMsg" style="color:#f28b82;display:none;"></p>
+            <div class="canvas-wrapper" id="canvasWrapper">
+                <canvas id="braggerCanvas"></canvas>
+                <button class="share-btn" id="shareBtn">🌍 Share to the Community</button>
+                <p class="cooldown-note" id="cooldownNote"></p>
+                <p class="cooldown-message" id="cooldownMessage">
+                    While you wait, go back and grow your empire. Buy more buildings, increase your DPS, and come back with an even bigger flex.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="pageCommunity" style="display:none;">
+        <div class="back-bar"><a href="#" class="back-link" id="backToGame2">← Back to Game</a><a href="#" class="community-top-link" id="toBrag">📜 Create Yours</a></div>
+        <div class="comm-page"><h1>🍩 Braggers Community</h1><p class="subtitle">See how others are flexing their empires</p>
+            <div class="stats-bar" id="statsBar"><div class="counter">🍩 <span id="braggerCount">0</span> braggers shared</div></div>
+            <div class="sort-bar" id="sortBar"><button class="sort-pill active" data-sort="recent">🕐 Recent</button><button class="sort-pill" data-sort="donuts">🍩 Most Donuts</button><button class="sort-pill" data-sort="dps">⚡ Highest DPS</button></div>
+            <div class="loading" id="loading">Loading braggers...</div>
+            <div class="empty-state" id="emptyState"><div class="icon">🍩</div><p>No braggers shared yet.</p></div>
+            <div id="braggersFeed"></div>
+        </div>
+    </div>
+
+    <div id="pageStory" style="display:none;">
+        <div class="back-bar"><a href="#" class="back-link" id="backToGame3">← Back to Game</a></div>
+        <div class="story-container">
+            <h1>My Touch</h1>
+            <p class="story-subtitle">What I did to a broken donut game and why</p>
+            <h2>I. The Accidental Inheritance</h2>
+            <p>A few months ago, a friend on SoloLearn shared a donut clicker game. Simple stuff: a big donut emoji, some buttons, numbers going up. I left a compliment, scrolled past, didn't think much of it.</p>
+            <p>But something stuck. Not the game itself. The <em>possibility</em> of it. I kept thinking: this works, but it could breathe better. The numbers tick, sure, but nothing feels alive. No feedback when you click. No smoothness. No trust that your progress will survive a browser refresh.</p>
+            <p>So I went back. Not to copy — to <em>touch</em>.</p>
+            <h2>II. What I Actually Changed (And Why)</h2>
+            <p>The game logic is untouched. Same buildings, same prices, same math. I didn't reinvent the wheel, I just made it roll smoother.</p>
+            <p><strong>The structure.</strong> The CSS opened with a syntax error that somehow still worked. The JavaScript mixed inline handlers with event listeners like it couldn't decide which era it belonged to. I cleaned it up. Just enough that the next person who opens this code won't have to squint.</p>
+            <p><strong>The loop.</strong> <code class="inline-code">setTimeout</code> at 40ms is fine until your tab loses focus and your donuts stop accumulating while you're checking messages. I switched to <code class="inline-code">requestAnimationFrame</code> with <code class="inline-code">performance.now()</code>. The game keeps breathing even when you look away.</p>
+            <p><strong>The feedback.</strong> <code class="inline-code">alert("Bought Cursor!")</code> is a crime against user experience. It rips you out of the game. I replaced it with floating text — little "+1" and "+0.1/s" bubbles that drift upward and vanish. You stay in the flow. The game whispers instead of shouting.</p>
+            <p><strong>The persistence.</strong> The original had a "Save" button that basically confessed <em>"this might not work."</em> I added email-based save/load. Here's the thing though — it's not actually emailing anything. It just uses <code class="inline-code">localStorage</code> with your email as a key. Think of it like this: your grandpa says he wants to play too. And maybe your pet. This way they each get their own save slot without ruining your 47 factories. It's a joke, but also — it works.</p>
+            <h2>III. The Details Nobody Asked For</h2>
+            <p>I added <code class="inline-code">focus-visible</code> outlines for keyboard players. A <code class="inline-code">backdrop-filter</code> fallback because not every browser supports blur. Email validation with a regex that isn't perfect but catches the obvious disasters. These aren't features you list on a landing page. They're just... <em>care</em>. The kind of care that makes something feel finished instead of abandoned.</p>
+            <h2>IV. What This Is (And Isn't)</h2>
+            <p>I know clicker games are everywhere. Cookie Clicker clones are the "Hello World" of game development. I didn't make this to be original, I made it to be <em>clear</em>. Something a beginner can open, read, and understand. A cheat sheet with a pulse.</p>
+            <p>If you're learning JavaScript, you can look at this and see:</p>
+            <ul><li>How <code class="inline-code">reduce()</code> calculates production rates</li><li>Why <code class="inline-code">requestAnimationFrame</code> beats <code class="inline-code">setInterval</code></li><li>How to separate concerns without over-engineering</li><li>How to store data locally without a backend</li></ul>
+            <h2>V. What It Could Be</h2>
+            <p>This isn't finished. It's not supposed to be. If you want to play with this code and make it your own, here are a few things you could try building:</p>
+            <ul><li><strong>Offline earnings.</strong> The game should count donuts even when you're logged off. Come back after a day, see what you missed. It's the whole point of idle games.</li><li><strong>Achievements.</strong> "First Thousand Donuts." "Grandma Army." Little dopamine hits that keep you scrolling.</li><li><strong>Prestige system.</strong> Reset everything for a permanent multiplier. The classic "do it all again, but faster" loop.</li><li><strong>Visual upgrades.</strong> The donut should change as you progress: sprinkles, glaze, gold leaf. The buildings should animate. A grandma should look like she's baking.</li><li><strong>Sound.</strong> The soft click of a donut. The cha-ching of a purchase. Not music — texture.</li><li><strong>Dark mode toggle.</strong> Because not everyone wants a purple gradient at 2 AM.</li><li><strong>Export/Import JSON.</strong> For people who want to move saves between devices without the email workaround.</li></ul>
+            <h2>VI. Why I Touch Things</h2>
+            <p>I can't leave code alone. "Good enough" isn't a category I understand. I see a <code class="inline-code">var</code> where a <code class="inline-code">const</code> should live and my fingers itch. I see an <code class="inline-code">alert()</code> and I see a missed opportunity to delight someone.</p>
+            <p>This isn't about the donut. The donut is ridiculous. It's about the act of making something slightly better than you found it. About leaving fingerprints. About the stubborn belief that <em>craft matters</em>, even in a throwaway clicker game on a coding playground.</p>
+            <hr>
+            <h2>VII. The Actual Closing</h2>
+            <p>If you're reading this and you're the friend who shared the original — thank you. I know you don't mind that I took your sketch and painted over it. The lines underneath are still yours.</p>
+            <p>If you're reading this and you're learning to code — take this. Break it. Add the offline earnings. Make the donut spin. Make it yours.</p>
+            <div class="closing"><p>The code is yawning.<br>The donut is waiting.</p><p style="margin-top: 24px; font-style: normal; font-size: 0.9rem;"><strong>— Nyota Wa Kweli</strong> 🧌</p></div>
+            <hr>
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-top: 24px;"><p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 12px;">The original code was written by someone on SoloLearn. I found it, loved the idea, and spent weeks polishing every detail into what you see now. The core game logic is still theirs.</p></div>
+            <div style="text-align: center; padding: 32px 0 8px;"><img src="https://i.ibb.co/XZjh9FPV/qr-code.png" alt="QR code to full source code" class="qr-code-img" /><p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 8px;">Scan to get the full source code</p></div>
+            <div class="footer-links"><div style="font-weight: 700; font-size: 13px; letter-spacing: 1.5px;"><span style="color: #ffca28;">G</span><span style="color: #ff9800;">U</span><span style="color: #f57f17;">G</span><span style="color: #ef6c00;">A</span></div><a href="https://instagram.com/8913_73" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 6px; color: #9aa0a6; text-decoration: none; font-size: 11px; transition: all 0.15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.3.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.5.3 1.1.4 2.3.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.5.2-1.1.3-2.3.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.5-.3-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.5-.2 1.1-.3 2.3-.4C8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 5.8.1 4.9.3 4.1.6 3.3.9 2.6 1.3 2 2 1.3 2.6.9 3.3.6 4.1.3 4.9.1 5.8.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.1 1.3.3 2.2.6 3 .3.8.7 1.5 1.4 2.1.6.6 1.3 1.1 2.1 1.4.8.3 1.7.5 3 .6C8.3 24 8.7 24 12 24s3.7 0 4.9-.1c1.3-.1 2.2-.3 3-.6.8-.3 1.5-.7 2.1-1.4.6-.6 1.1-1.3 1.4-2.1.3-.8.5-1.7.6-3 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.1-1.3-.3-2.2-.6-3-.3-.8-.7-1.5-1.4-2.1-.6-.6-1.3-1.1-2.1-1.4-.8-.3-1.7-.5-3-.6C15.7 0 15.3 0 12 0zm0 5.8c-3.4 0-6.2 2.8-6.2 6.2s2.8 6.2 6.2 6.2 6.2-2.8 6.2-6.2-2.8-6.2-6.2-6.2zm0 10.2c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm6.4-11.8c-.8 0-1.4.6-1.4 1.4s.6 1.4 1.4 1.4 1.4-.6 1.4-1.4-.6-1.4-1.4-1.4z"/></svg>@8913_73</a></div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        var SUPABASE_URL='https://gudsybbywbksilodgahg.supabase.co';
+        var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1ZHN5YmJ5d2Jrc2lsb2RnYWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MjQ0NzIsImV4cCI6MjA5NDQwMDQ3Mn0.Moc9Hb_hu-q2zK-kP9Rzp21kmLdFAPsgRMToONdEwow';
+        var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+        var IMGBB_KEY='fd2eef8b4df24ab82126c352c5efa9af';
+        var COOLDOWN_MS=15*60*1000,LAST_BRAG_KEY='lastBragTime',CACHE_KEY='donutBraggerCache',CACHE_TIME_KEY='donutBraggerCacheTime',CACHE_DURATION=5*60*1000;
+        var colorPairs=[{bg:'#222222',accent:'#89E900'},{bg:'#F7F7FF',accent:'#27187E'},{bg:'#FB3640',accent:'#000F08'},{bg:'#F0EDE5',accent:'#004643'},{bg:'#FFF3E6',accent:'#381932'}];
+
+        function $(id){return document.getElementById(id);}
+        function showToast(msg,isErr){var t=$('toast');t.textContent=msg;t.className='toast'+(isErr?' error':'');setTimeout(function(){t.classList.add('show');},10);clearTimeout(t._ht);t._ht=setTimeout(function(){t.classList.remove('show');},2500);}
+
+        function showPage(id){
+            $('pageGame').style.display='none';
+            $('pageBrag').style.display='none';
+            $('pageCommunity').style.display='none';
+            $('pageStory').style.display='none';
+            $(id).style.display='block';
+            window.scrollTo(0,0);
+        }
+        
+        var bragBtn = $('bragBtn');
+        var storyBtn = $('storyBtn');
+        var backToGame = $('backToGame');
+        var backToGame2 = $('backToGame2');
+        var backToGame3 = $('backToGame3');
+        var toCommunity = $('toCommunity');
+        var toBrag = $('toBrag');
+        
+        if(bragBtn) bragBtn.addEventListener('click',function(e){e.preventDefault();showPage('pageBrag');saveCurrentGame();});
+        if(storyBtn) storyBtn.addEventListener('click',function(e){e.preventDefault();showPage('pageStory');saveCurrentGame();});
+        if(backToGame) backToGame.addEventListener('click',function(e){e.preventDefault();showPage('pageGame');autoLoadGame();});
+        if(backToGame2) backToGame2.addEventListener('click',function(e){e.preventDefault();showPage('pageGame');autoLoadGame();});
+        if(backToGame3) backToGame3.addEventListener('click',function(e){e.preventDefault();showPage('pageGame');autoLoadGame();});
+        if(toCommunity) toCommunity.addEventListener('click',function(e){e.preventDefault();showPage('pageCommunity');loadBraggers();});
+        if(toBrag) toBrag.addEventListener('click',function(e){e.preventDefault();showPage('pageBrag');});
+
+        setTimeout(function(){var s=$('splashOverlay');if(s){s.classList.add('fade-out');setTimeout(function(){s.style.display='none';},500);}},4000);
+
+        let donuts=0,donutsPerSecond=0,lastUsedEmail=localStorage.getItem('lastUsedEmail')||'',gameLoopId=null;
+        const donutsPerClick=1;
+        const buildings=[{name:"🖱 Cursor",baseCost:15,costMult:1.15,prod:0.1,count:0},{name:"👵 Grandma",baseCost:100,costMult:1.15,prod:1,count:0},{name:"🍩 Donut Stand",baseCost:1100,costMult:1.15,prod:8,count:0},{name:"🥮 Bakery",baseCost:12000,costMult:1.15,prod:47,count:0},{name:"🚚 Delivery Van",baseCost:130000,costMult:1.15,prod:260,count:0},{name:"🏭 Factory",baseCost:1400000,costMult:1.15,prod:1400,count:0}];
+
+        function setLastEmail(email){
+            lastUsedEmail = email;
+            localStorage.setItem('lastUsedEmail', email);
+            if($('emailInput')) $('emailInput').value = email;
+            if($('playerEmail')) $('playerEmail').value = email;
+        }
+        
+        function updateProduction(){donutsPerSecond=buildings.reduce((t,b)=>t+b.prod*b.count,0);}
+        
+        function updateUI(){
+            var scoreEl=$('score'); if(scoreEl) scoreEl.innerHTML=Math.floor(donuts).toLocaleString();
+            var dpsEl=$('dps'); if(dpsEl) dpsEl.innerHTML=donutsPerSecond.toFixed(1)+" donuts/sec";
+            var c=$('buildings'); if(!c) return;
+            c.innerHTML="";
+            for(let i=0;i<buildings.length;i++){var b=buildings[i],cost=Math.floor(b.baseCost*Math.pow(b.costMult,b.count)),aff=donuts>=cost,btn=document.createElement("button");btn.textContent=aff?`Buy (${cost.toLocaleString()})`:`Need ${cost.toLocaleString()}`;btn.disabled=!aff;btn.dataset.index=i;btn.addEventListener("click",()=>buyBuilding(i));var d=document.createElement("div");d.className="building";d.innerHTML=`<div class="name">${b.name}</div><div class="owned">${b.count} owned</div><div class="produces">each produces ${b.prod.toFixed(1)} /s</div>`;d.appendChild(btn);c.appendChild(d);}}
+        
+        function buyBuilding(i){var b=buildings[i],cost=Math.floor(b.baseCost*Math.pow(b.costMult,b.count));if(donuts>=cost){donuts-=cost;b.count++;updateProduction();updateUI();showFloatingText(`+${b.prod}/s`,$('big-donut'));}}
+        
+        function showFloatingText(text,parent){if(!parent) return;var f=document.createElement("div");f.className="float";f.textContent=text;var r=parent.getBoundingClientRect();f.style.left=r.left+r.width/2+"px";f.style.top=r.top+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),1200);}
+        
+        function clickDonut(e){e.preventDefault();donuts+=donutsPerClick;var c=$('big-donut');if(c){c.classList.add("clicked");setTimeout(()=>c.classList.remove("clicked"),80);showFloatingText("+1",c);updateUI();}}
+        
+        let lastTime=performance.now();function gameLoop(now){var d=(now-lastTime)/1000;lastTime=now;donuts+=donutsPerSecond*d;updateUI();gameLoopId=requestAnimationFrame(gameLoop);}
+        
+        function isValidEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
+        
+        function getRelativeTime(ts){var n=Date.now(),d=n-ts,s=Math.floor(d/1000),m=Math.floor(s/60),h=Math.floor(m/60),D=Math.floor(h/24);if(D>30)return Math.floor(D/30)+" month"+(Math.floor(D/30)>1?"s":"")+" ago";if(D>0)return D+" day"+(D>1?"s":"")+" ago";if(h>0)return h+" hour"+(h>1?"s":"")+" ago";if(m>0)return m+" minute"+(m>1?"s":"")+" ago";return"just now";}
+        
+        function saveCurrentGame(){
+            if(lastUsedEmail && lastUsedEmail !== ''){
+                var s = { donuts: donuts, buildings: buildings.map(b => ({ count: b.count })) };
+                localStorage.setItem("donutSave_" + lastUsedEmail, JSON.stringify(s));
+                localStorage.setItem("donutSaveTime_" + lastUsedEmail, Date.now().toString());
+            }
+        }
+        
+        function autoLoadGame(){
+            if(lastUsedEmail && lastUsedEmail !== ''){
+                var saved = localStorage.getItem("donutSave_" + lastUsedEmail);
+                if(saved){
+                    try{
+                        var save = JSON.parse(saved);
+                        if(typeof save.donuts === "number"){
+                            donuts = save.donuts;
+                            save.buildings.forEach(function(b,i){
+                                if(b && typeof b.count === "number") buildings[i].count = b.count;
+                            });
+                            updateProduction();
+                            updateUI();
+                        }
+                    } catch(e) {}
+                }
+            }
+        }
+        
+        function saveGameToEmail(email){
+            var s = { donuts: donuts, buildings: buildings.map(b => ({ count: b.count })) };
+            localStorage.setItem("donutSave_" + email, JSON.stringify(s));
+            localStorage.setItem("donutSaveTime_" + email, Date.now().toString());
+            setLastEmail(email);
+            showFloatingText("💾 Saved", $('big-donut'));
+            showToast("✓ Saved to " + email);
+            refreshProgressList();
+        }
+        
+        function loadGameFromEmail(email){
+            var saved = localStorage.getItem("donutSave_" + email);
+            if(!saved){
+                showToast("✗ No save found for this email", true);
+                return false;
+            }
+            try{
+                var save = JSON.parse(saved);
+                if(typeof save !== "object" || save === null) throw new Error("Invalid");
+                donuts = save.donuts;
+                save.buildings.forEach((b,i) => {
+                    if(b && typeof b.count === "number") buildings[i].count = b.count;
+                });
+                updateProduction();
+                updateUI();
+                setLastEmail(email);
+                showFloatingText("📂 Loaded", $('big-donut'));
+                showToast("✓ Loaded from " + email);
+                return true;
+            } catch(e){
+                showToast("✗ Failed to load save", true);
+                return false;
+            }
+        }
+        
+        function getAllSavedEmails(){
+            var emails = [];
+            for(let i = 0; i < localStorage.length; i++){
+                var key = localStorage.key(i);
+                if(key && key.startsWith("donutSave_") && !key.startsWith("donutSaveTime_")){
+                    var email = key.replace("donutSave_", "");
+                    var tk = "donutSaveTime_" + email;
+                    var ts = localStorage.getItem(tk);
+                    emails.push({ email: email, timestamp: ts ? parseInt(ts) : 0 });
+                }
+            }
+            emails.sort((a,b) => b.timestamp - a.timestamp);
+            return emails;
+        }
+
+        var confirmCb = null;
+        function showConfirm(msg,cb){$('confirmMsg').textContent=msg;$('confirmOverlay').classList.add('show');confirmCb=cb;}
+        function hideConfirm(){$('confirmOverlay').classList.remove('show');confirmCb=null;}
+        
+        function refreshProgressList() {
+            const list = $("progressList");
+            const emails = getAllSavedEmails();
+            if (emails.length === 0) {
+                list.innerHTML = '<div class="available-progresses-empty">No saved progress yet. Save your game first.</div>';
+                return;
+            }
+            list.innerHTML = "";
+            for (let i = 0; i < emails.length; i++) {
+                const item = emails[i];
+                const div = document.createElement("div");
+                div.className = "progress-item";
+                div.innerHTML = `<span>📧 ${item.email}</span><span class="progress-time">${item.timestamp ? getRelativeTime(item.timestamp) : 'unknown'}</span>`;
+                div.addEventListener("click", function() {
+                    $("emailInput").value = item.email;
+                    showConfirm("Load progress from " + item.email + "? This will overwrite your current game.", function() {
+                        loadGameFromEmail(item.email);
+                        $("progressList").classList.remove("show");
+                        $("progressToggle").classList.remove("open");
+                    });
+                });
+                list.appendChild(div);
+            }
+        }
+
+        function startGame(){
+            updateProduction();updateUI();refreshProgressList();
+            if(lastUsedEmail){if($('emailInput')) $('emailInput').value=lastUsedEmail;if($('playerEmail')) $('playerEmail').value=lastUsedEmail;}
+            autoLoadGame();
+            var cookie=$('big-donut');if(cookie){cookie.addEventListener("click",clickDonut);cookie.addEventListener("touchstart",(e)=>{e.preventDefault();clickDonut(e);},{passive:false});}
+            var confirmYes=$('confirmYes');if(confirmYes) confirmYes.addEventListener("click",function(){if(confirmCb)confirmCb();hideConfirm();});
+            var confirmNo=$('confirmNo');if(confirmNo) confirmNo.addEventListener("click",hideConfirm);
+            var confirmOverlay=$('confirmOverlay');if(confirmOverlay) confirmOverlay.addEventListener("click",function(e){if(e.target===confirmOverlay)hideConfirm();});
+            var resetBtn=$('reset');if(resetBtn) resetBtn.addEventListener("click",()=>{showConfirm("Reset your entire game? All progress will be lost.",function(){donuts=0;buildings.forEach(b=>b.count=0);updateProduction();updateUI();showToast("⟲ Game reset");});});
+            var saveEmail=$('saveEmail');if(saveEmail) saveEmail.addEventListener("click",()=>{var email=$('emailInput').value.trim();if(!isValidEmail(email)){showToast("✗ Invalid email",true);return;}showConfirm("Save current progress to " + email + "?", function(){saveGameToEmail(email);});});
+            var loadEmail=$('loadEmail');if(loadEmail) loadEmail.addEventListener("click",()=>{var email=$('emailInput').value.trim();if(!isValidEmail(email)){showToast("✗ Invalid email",true);return;}showConfirm("Load progress from " + email + "? This will overwrite your current game.", function(){loadGameFromEmail(email);});});
+            var pt=$('progressToggle'),pl=$('progressList');if(pt && pl) pt.addEventListener("click",function(){var o=pl.classList.contains("show");if(o){pl.classList.remove("show");pt.classList.remove("open");}else{refreshProgressList();pl.classList.add("show");pt.classList.add("open");}});
+            
+            var blob=$('infoBlob'),blobPanel=$('infoBlobPanel'),blobClose=$('infoPanelClose'),isDragging=false,isPanelOpen=false,hasMoved=false,dragStartX=0,dragStartY=0,blobStartX=0,blobStartY=0;
+            if(blob){
+                var sx=localStorage.getItem('blobX'),sy=localStorage.getItem('blobY');if(sx&&sy){blob.style.left=sx+'px';blob.style.top=sy+'px';blob.style.right='auto';blob.style.bottom='auto';}else{blob.style.right='20px';blob.style.bottom='100px';}
+                function posPanel(){if(!blobPanel) return;var r=blob.getBoundingClientRect(),px=r.left-140,py=r.top-420;if(px<10)px=10;if(px+320>window.innerWidth-10)px=window.innerWidth-330;if(py<10)py=r.bottom+10;blobPanel.style.left=px+'px';blobPanel.style.top=py+'px';}
+                blob.addEventListener('pointerdown',function(e){isDragging=true;hasMoved=false;dragStartX=e.clientX;dragStartY=e.clientY;var rect=blob.getBoundingClientRect();blobStartX=rect.left;blobStartY=rect.top;blob.setPointerCapture(e.pointerId);});
+                blob.addEventListener('pointermove',function(e){if(!isDragging)return;var dx=e.clientX-dragStartX,dy=e.clientY-dragStartY;if(Math.abs(dx)>3||Math.abs(dy)>3)hasMoved=true;var nx=blobStartX+dx,ny=blobStartY+dy;nx=Math.max(0,Math.min(window.innerWidth-52,nx));ny=Math.max(0,Math.min(window.innerHeight-52,ny));blob.style.left=nx+'px';blob.style.top=ny+'px';blob.style.right='auto';blob.style.bottom='auto';if(isPanelOpen && blobPanel) posPanel();});
+                blob.addEventListener('pointerup',function(){isDragging=false;if(!hasMoved){if(isPanelOpen)closePanel();else openPanel();}else{localStorage.setItem('blobX',blob.style.left.replace('px',''));localStorage.setItem('blobY',blob.style.top.replace('px',''));}});
+                function openPanel(){if(blobPanel){posPanel();blobPanel.classList.add('open');isPanelOpen=true;blob.textContent='✕';}}function closePanel(){if(blobPanel){blobPanel.classList.remove('open');isPanelOpen=false;blob.textContent='?';}}
+                if(blobClose) blobClose.addEventListener('click',function(e){e.stopPropagation();closePanel();});
+                document.addEventListener('click',function(e){if(isPanelOpen && blobPanel && !blobPanel.contains(e.target) && e.target!==blob) closePanel();});
+            }
+            gameLoopId=requestAnimationFrame(gameLoop);
+        }
+        startGame();
+
+        var playerColorKey='donutBraggerColor',playerColor=null,currentBraggerData=null,braggerCanvas=$('braggerCanvas'),bctx=braggerCanvas?braggerCanvas.getContext('2d'):null;
+        function getPlayerColor(){var s=localStorage.getItem(playerColorKey);if(s!==null){var i=parseInt(s);if(i>=0&&i<colorPairs.length){playerColor=colorPairs[i];return;}}var r=Math.floor(Math.random()*colorPairs.length);localStorage.setItem(playerColorKey,r);playerColor=colorPairs[r];}getPlayerColor();
+        function getRank(dps){if(dps>=10000)return{stars:5,title:'Platinum Tycoon',starColor:'#E5E4E2'};if(dps>=1000)return{stars:4,title:'Rose Gold Tycoon',starColor:'#E0BFB8'};if(dps>=100)return{stars:3,title:'Golden Tycoon',starColor:'#FFD700'};if(dps>=10)return{stars:2,title:'Silver Tycoon',starColor:'#C0C0C0'};return{stars:1,title:'Bronze Tycoon',starColor:'#CD7F32'};}
+        function getCountryFlag(cc){if(!cc||cc==='Earth')return'🌍';var cp=[];for(var i=0;i<2;i++)cp.push(0x1F1E6+cc.charCodeAt(i)-65);return String.fromCodePoint(cp[0],cp[1]);}
+        function isLightColor(hex){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(r*299+g*587+b*114)/1000>150;}
+        function drawBragger(name,cn,cc,dateStr,donuts,dps,buildingsData){if(!bctx) return;var dpr=window.devicePixelRatio||1,w=420,h=680;braggerCanvas.width=w*dpr;braggerCanvas.height=h*dpr;braggerCanvas.style.width=w+'px';braggerCanvas.style.height=h+'px';bctx.scale(dpr,dpr);var bg=playerColor.bg,accent=playerColor.accent,light=isLightColor(bg),tc=light?'#1a1a1a':'#ffffff',sc=light?'#444444':'#cccccc';bctx.fillStyle=bg;bctx.beginPath();var r=16;bctx.moveTo(r,0);bctx.lineTo(w-r,0);bctx.quadraticCurveTo(w,0,w,r);bctx.lineTo(w,h-r);bctx.quadraticCurveTo(w,h,w-r,h);bctx.lineTo(r,h);bctx.quadraticCurveTo(0,h,0,h-r);bctx.lineTo(0,r);bctx.quadraticCurveTo(0,0,r,0);bctx.closePath();bctx.fill();var rank=getRank(dps),y=30;bctx.fillStyle=accent;bctx.font='bold 28px -apple-system,sans-serif';bctx.textAlign='center';bctx.fillText('🍩 DONUT',w/2,y+28);y+=34;bctx.fillText('TYCOON',w/2,y+28);y+=42;var stars='';for(var s=0;s<rank.stars;s++)stars+='★';bctx.fillStyle=rank.starColor;bctx.font='36px -apple-system,sans-serif';bctx.fillText(stars,w/2,y+30);y+=36;bctx.fillStyle=accent;bctx.font='bold 16px -apple-system,sans-serif';bctx.fillText(rank.title,w/2,y+22);y+=36;bctx.fillStyle=sc;bctx.font='13px -apple-system,sans-serif';bctx.fillText('Awarded to',w/2,y+18);y+=20;bctx.fillStyle=tc;bctx.font='bold 22px -apple-system,sans-serif';var dn=name||'Anonymous Baker';if(dn.length>24)dn=dn.slice(0,22)+'..';bctx.fillText(dn,w/2,y+26);y+=40;bctx.fillStyle=tc;bctx.font='15px -apple-system,sans-serif';var flag=getCountryFlag(cc),lt=(cn&&cn!=='Earth')?(flag+' '+cn):'🌍 Earth';bctx.fillText('📍 '+lt,w/2,y+20);y+=28;bctx.fillText('📅 '+dateStr,w/2,y+20);y+=36;bctx.strokeStyle=accent;bctx.lineWidth=2;bctx.beginPath();bctx.moveTo(50,y);bctx.lineTo(w-50,y);bctx.stroke();y+=24;bctx.fillStyle=tc;bctx.font='bold 30px -apple-system,sans-serif';bctx.fillText('🍩 '+Math.floor(donuts).toLocaleString(),w/2,y+30);y+=34;bctx.fillStyle=sc;bctx.font='13px -apple-system,sans-serif';bctx.fillText('Total Donuts Earned',w/2,y+18);y+=32;bctx.fillStyle=tc;bctx.font='bold 22px -apple-system,sans-serif';bctx.fillText('⚡ '+dps.toFixed(1)+' DPS',w/2,y+24);y+=28;bctx.fillStyle=sc;bctx.font='13px -apple-system,sans-serif';bctx.fillText('Donuts Per Second',w/2,y+18);y+=32;bctx.strokeStyle=accent;bctx.lineWidth=2;bctx.beginPath();bctx.moveTo(50,y);bctx.lineTo(w-50,y);bctx.stroke();y+=24;bctx.fillStyle=accent;bctx.font='bold 15px -apple-system,sans-serif';bctx.fillText('🏗 Buildings Owned',w/2,y+20);y+=30;bctx.fillStyle=tc;bctx.font='14px monospace';bctx.textAlign='left';var lx=60,rx=w-60;for(var b=0;b<buildingsData.length;b++){var bd=buildingsData[b];bctx.fillText(bd.emoji+' '+bd.name,lx,y+18);bctx.textAlign='right';bctx.fillText(bd.count.toString(),rx,y+18);bctx.textAlign='left';y+=24;}bctx.textAlign='center';y+=16;bctx.strokeStyle=accent;bctx.lineWidth=2;bctx.beginPath();bctx.moveTo(50,y);bctx.lineTo(w-50,y);bctx.stroke();y+=20;bctx.fillStyle=sc;bctx.font='11px -apple-system,sans-serif';bctx.fillText('Donut Tycoon © '+new Date().getFullYear(),w/2,y+14);}
+
+        function isOnCooldown(){var lb=localStorage.getItem(LAST_BRAG_KEY);if(!lb)return false;return(Date.now()-parseInt(lb))<COOLDOWN_MS;}
+        function getCooldownRemaining(){var lb=localStorage.getItem(LAST_BRAG_KEY);if(!lb)return 0;return Math.max(0,COOLDOWN_MS-(Date.now()-parseInt(lb)));}
+        function formatCooldown(ms){var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);if(m>0)return m+" minute"+(m>1?"s":"")+" "+s+"s";return s+" seconds";}
+        
+        function applyCooldownUI(){
+            var sb=$('shareBtn'), cn=$('cooldownNote'), cm=$('cooldownMessage');
+            if(!sb) return;
+            if(isOnCooldown()){
+                sb.disabled=true;
+                sb.classList.add('cooldown');
+                if(cn) cn.classList.add('show');
+                if(cm) cm.style.display='block';
+                updateCooldownDisplay();
+                startCooldownTimer();
+            }else{
+                sb.disabled=false;
+                sb.classList.remove('cooldown');
+                sb.textContent='🌍 Share to the Community';
+                if(cn) cn.classList.remove('show');
+                if(cm) cm.style.display='none';
+                stopCooldownTimer();
+            }
+        }
+        
+        function updateCooldownDisplay(){
+            if(!isOnCooldown()){
+                applyCooldownUI();
+                return;
+            }
+            var r=getCooldownRemaining(), f=formatCooldown(r);
+            var sb=$('shareBtn');
+            if(sb) sb.textContent='⏳ Wait '+f;
+            var cn=$('cooldownNote');
+            if(cn) cn.textContent='You can share again in '+f;
+        }
+        
+        var cooldownTimer=null;
+        function startCooldownTimer(){
+            stopCooldownTimer();
+            cooldownTimer=setInterval(function(){
+                if(!isOnCooldown()){
+                    applyCooldownUI();
+                }else{
+                    updateCooldownDisplay();
+                }
+            }, 1000);
+        }
+        
+        function stopCooldownTimer(){if(cooldownTimer){clearInterval(cooldownTimer);cooldownTimer=null;}}
+        function setCooldown(){localStorage.setItem(LAST_BRAG_KEY,Date.now().toString());applyCooldownUI();}
+
+        function getAllSavedEmailsBrag(){var emails=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf("donutSave_")===0&&key.indexOf("donutSaveTime_")!==0){var email=key.replace("donutSave_",""),tk="donutSaveTime_"+email,ts=localStorage.getItem(tk);emails.push({email:email,timestamp:ts?parseInt(ts):0});}}emails.sort(function(a,b){return b.timestamp-a.timestamp;});return emails;}
+        function refreshEmailsList(){var list=$('emailsList'),emails=getAllSavedEmailsBrag();if(!list) return;if(emails.length===0){list.innerHTML='<div class="avail-emails-empty">No saved games found.</div>';list.style.display='block';return;}list.innerHTML="";for(var i=0;i<emails.length;i++){var item=emails[i],div=document.createElement("div");div.className="email-item";div.innerHTML='<span>📧 '+item.email+'</span><span class="email-time">'+(item.timestamp?getRelativeTime(item.timestamp):'unknown')+'</span>';div.addEventListener("click",function(){var email=this.querySelector('span').textContent.replace('📧 ','');var playerEmail=$('playerEmail');if(playerEmail) playerEmail.value=email;if(emailsList) emailsList.style.display='none';var emailsToggleEl=$('emailsToggle');if(emailsToggleEl) emailsToggleEl.classList.remove('open');});list.appendChild(div);}}
+        var emailsToggle=$('emailsToggle'),emailsList=$('emailsList');if(emailsToggle && emailsList) emailsToggle.addEventListener('click',function(){var o=emailsList.style.display==='block';if(o){emailsList.style.display='none';emailsToggle.classList.remove('open');}else{refreshEmailsList();emailsList.style.display='block';emailsToggle.classList.add('open');}});
+
+        var bragBtn2=$('bragBtn2'); if(bragBtn2) bragBtn2.addEventListener('click',function(){
+            var errorMsg=$('errorMsg'); if(errorMsg) errorMsg.style.display='none';
+            var canvasWrapper=$('canvasWrapper'); if(canvasWrapper) canvasWrapper.style.display='none';
+            var shareBtn=$('shareBtn'); if(shareBtn) shareBtn.style.display='none';
+            var cooldownNote=$('cooldownNote'); if(cooldownNote) cooldownNote.style.display='none';
+            stopCooldownTimer();
+            var name=$('playerName')?$('playerName').value.trim():'',email=$('playerEmail')?$('playerEmail').value.trim():'';if(!name){if(errorMsg){errorMsg.textContent='Please enter your name.';errorMsg.style.display='block';}return;}
+            if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){if(errorMsg){errorMsg.textContent='Enter a valid email.';errorMsg.style.display='block';}return;}
+            var saved=localStorage.getItem('donutSave_'+email);if(!saved){if(errorMsg){errorMsg.textContent='No saved game found for this email.';errorMsg.style.display='block';}return;}
+            var save;try{save=JSON.parse(saved);}catch(e){if(errorMsg){errorMsg.textContent='Save data corrupted.';errorMsg.style.display='block';}return;}
+            if(typeof save.donuts!=='number'||!Array.isArray(save.buildings)){if(errorMsg){errorMsg.textContent='Save data incomplete.';errorMsg.style.display='block';}return;}
+            var donuts=save.donuts,dps=0,buildingData=[{name:'Cursor',emoji:'🖱',count:0,prod:0.1},{name:'Grandma',emoji:'👵',count:0,prod:1},{name:'Donut Stand',emoji:'🍩',count:0,prod:8},{name:'Bakery',emoji:'🥮',count:0,prod:47},{name:'Delivery Van',emoji:'🚚',count:0,prod:260},{name:'Factory',emoji:'🏭',count:0,prod:1400}];
+            for(var i=0;i<buildingData.length;i++){if(save.buildings[i]&&typeof save.buildings[i].count==='number')buildingData[i].count=save.buildings[i].count;dps+=buildingData[i].prod*buildingData[i].count;}
+            var now=new Date(),months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear(),rank=getRank(dps),cn='Earth',cc='Earth';
+            currentBraggerData={name:name,donuts:donuts,dps:dps,buildingData:buildingData,dateStr:dateStr,rank:rank};
+            function renderBragger(){drawBragger(name,cn,cc,dateStr,donuts,dps,buildingData);if(canvasWrapper) canvasWrapper.style.display='flex';if(shareBtn) shareBtn.style.display='block';applyCooldownUI();if(canvasWrapper) canvasWrapper.scrollIntoView({behavior:'smooth'});}
+            if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(pos){try{var xhr=new XMLHttpRequest();xhr.open('GET','https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude+'&zoom=3',true);xhr.timeout=5000;xhr.onload=function(){if(xhr.status===200){try{var data=JSON.parse(xhr.responseText);if(data&&data.address&&data.address.country_code){cc=data.address.country_code.toUpperCase();cn=data.address.country||'Earth';}}catch(e){}}if(currentBraggerData){currentBraggerData.countryName=cn;currentBraggerData.countryCode=cc;}renderBragger();};xhr.onerror=function(){renderBragger();};xhr.send();}catch(e){renderBragger();}},function(){renderBragger();},{timeout:5000,enableHighAccuracy:false});}else{renderBragger();}
+        });
+
+        var shareBtn=$('shareBtn'); if(shareBtn) shareBtn.addEventListener('click',function(){
+            if(!currentBraggerData)return;if(isOnCooldown()){showToast('⏳ Take a break, bake more donuts.',true);return;}
+            if(shareBtn){shareBtn.disabled=true;shareBtn.textContent='⏳ Uploading...';}
+            if(braggerCanvas) braggerCanvas.toBlob(function(blob){var fd=new FormData();fd.append('image',blob,'bragger.png');fd.append('key',IMGBB_KEY);var xhr=new XMLHttpRequest();xhr.open('POST','https://api.imgbb.com/1/upload',true);xhr.onload=function(){if(xhr.status===200){try{var r=JSON.parse(xhr.responseText);if(r.success&&r.data&&r.data.url){postToCommunity(r.data.url);return;}}catch(e){}}if(shareBtn){shareBtn.disabled=false;shareBtn.textContent='🌍 Share to the Community';}showToast('Upload failed.',true);};xhr.send(fd);},'image/png');
+        });
+
+        async function postToCommunity(imageUrl){var d=currentBraggerData;var entry={name:d.name,rank_title:d.rank.title,stars:d.rank.stars,dps:d.dps,donuts:Math.floor(d.donuts),country_name:d.countryName||'Earth',country_code:d.countryCode||'Earth',date_str:d.dateStr,image_url:imageUrl};var {error}=await sb.from('braggers').insert([entry]);if(error){var sbBtn=$('shareBtn');if(sbBtn){sbBtn.disabled=false;sbBtn.textContent='🌍 Share to the Community';}showToast('Failed to save.',true);return;}setCooldown();var sbBtn=$('shareBtn');if(sbBtn){sbBtn.textContent='✓ Shared!';sbBtn.disabled=true;}showToast('✓ Shared to the community!');localStorage.removeItem(CACHE_KEY);setTimeout(function(){showPage('pageCommunity');loadBraggers();},1500);}
+
+        var allBraggers=[],currentSort='recent';
+        var sortPills=document.querySelectorAll('#sortBar .sort-pill');sortPills.forEach(function(p){p.addEventListener('click',function(){var s=this.getAttribute('data-sort');if(s===currentSort)return;currentSort=s;sortPills.forEach(function(x){x.classList.remove('active');});this.classList.add('active');renderBraggersFeed(allBraggers);});});
+
+        function sortBraggersFeed(braggers){var s=braggers.slice();if(currentSort==='donuts'){s.sort(function(a,b){return(b.donuts||0)-(a.donuts||0);});}else if(currentSort==='dps'){s.sort(function(a,b){return(b.dps||0)-(a.dps||0);});}else{s.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});}return s;}
+        
+        function renderBraggersFeed(braggers){allBraggers=braggers;var sorted=sortBraggersFeed(braggers),feed=$('braggersFeed');if(!feed) return;feed.innerHTML='';var count=sorted.length;var braggerCountSpan=$('braggerCount');if(braggerCountSpan) braggerCountSpan.textContent=count;var statsBarDiv=$('statsBar'),sortBarDiv=$('sortBar'),emptyStateDiv=$('emptyState');if(count>0){if(statsBarDiv) statsBarDiv.style.display='block';if(sortBarDiv) sortBarDiv.style.display='flex';if(emptyStateDiv) emptyStateDiv.style.display='none';}else{if(statsBarDiv) statsBarDiv.style.display='none';if(sortBarDiv) sortBarDiv.style.display='none';if(emptyStateDiv) emptyStateDiv.style.display='block';return;}if(emptyStateDiv) emptyStateDiv.style.display='none';
+            for(var i=0;i<sorted.length;i++){var b=sorted[i];if(!b||!b.image_url)continue;var card=document.createElement('div');card.className='bragger-card';var flag=getCountryFlag(b.country_code||'Earth'),timeStr=b.created_at?getRelativeTime(new Date(b.created_at).getTime()):'',donutsStr=b.donuts?Math.floor(b.donuts).toLocaleString():'0';card.innerHTML='<img src="'+b.image_url+'" alt="Bragger by '+(b.name||'Unknown')+'" loading="lazy" /><div class="info"><span class="name">'+(b.name||'Anonymous')+'</span><span class="rank">'+('★'.repeat(b.stars||1))+' '+(b.rank_title||'Tycoon')+'</span><span class="dps">⚡ '+(b.dps||0).toFixed(1)+' DPS</span><span class="donuts-display">🍩 '+donutsStr+'</span><span>'+flag+' '+(b.country_name||'Earth')+'</span>'+(timeStr?'<span class="time">'+timeStr+'</span>':'')+'</div>';feed.appendChild(card);}
+        }
+
+        async function loadBraggers(){
+            var cData=localStorage.getItem(CACHE_KEY),cTime=localStorage.getItem(CACHE_TIME_KEY);
+            var loadingDiv=$('loading'),emptyStateDiv=$('emptyState'),braggersFeedDiv=$('braggersFeed');
+            
+            if(cData&&cTime&&(Date.now()-parseInt(cTime))<CACHE_DURATION){
+                try{
+                    var cache=JSON.parse(cData);
+                    if(cache.braggers&&Array.isArray(cache.braggers)){
+                        if(loadingDiv) loadingDiv.style.display='none';
+                        allBraggers=cache.braggers;
+                        renderBraggersFeed(cache.braggers);
+                        return;
+                    }
+                }catch(e){}
+            }
+            
+            if(loadingDiv) loadingDiv.style.display='block';
+            if(emptyStateDiv) emptyStateDiv.style.display='none';
+            if(braggersFeedDiv) braggersFeedDiv.innerHTML='';
+            
+            var {data,error}=await sb
+                .from('braggers')
+                .select('*')
+                .eq('is_deleted', false)
+                .order('created_at',{ascending:false});
+            
+            if(loadingDiv) loadingDiv.style.display='none';
+            
+            if(error||!data||data.length===0){
+                allBraggers=[];
+                renderBraggersFeed([]);
+                return;
+            }
+            allBraggers=data;
+            renderBraggersFeed(data);
+            localStorage.setItem(CACHE_KEY,JSON.stringify({braggers:data}));
+            localStorage.setItem(CACHE_TIME_KEY,Date.now().toString());
+        }
+    })();
+    </script>
+</body>
+</html>
